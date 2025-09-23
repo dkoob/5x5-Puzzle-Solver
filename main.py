@@ -1,17 +1,7 @@
 import random
+from copy import deepcopy
 
-# tried my best to get accurate symbols
-GAME_PIECES_TEST = [
-    {"id": 1, "symbols": ["◉", "⬟", "▲"], "length": 3, "placed": False, "position": None, "orientation": None, "color": "red"},
-    {"id": 2, "symbols": ["◉", "⬟", "𖦹"], "length": 3, "placed": False, "position": None, "orientation": None, "color": "green"},
-    {"id": 3, "symbols": ["𖦹", "✡︎", "⬟"], "length": 3, "placed": False, "position": None, "orientation": None, "color": "blue"},
-    {"id": 4, "symbols": ["✡︎", "𖦹", "◉"], "length": 3, "placed": False, "position": None, "orientation": None, "color": "yellow"},
-    {"id": 5, "symbols": ["✡︎", "⬟", "𖦹"], "length": 3, "placed": False, "position": None, "orientation": None, "color": "magenta"},
-    {"id": 7, "symbols": ["▲", "◉", "✡︎"], "length": 3, "placed": False, "position": None, "orientation": None, "color": "cyan"},
-    {"id": 8, "symbols": ["⬟", "▲", "𖦹"], "length": 3, "placed": False, "position": None, "orientation": None, "color": "bright_orange"},
-    {"id": 9, "symbols": ["◉", "▲"], "length": 2, "placed": False, "position": None, "orientation": None, "color": "pink"},
-    {"id": 6, "symbols": ["▲", "✡︎"], "length": 2, "placed": False, "position": None, "orientation": None, "color": "purple"},
-]
+# ---------- [BEGIN] CONSTANTS [BEGIN] ----------
 
 GAME_PIECES = [
     {"id": 1, "symbols": ["A", "B", "C"], "length": 3, "placed": False, "position": None, "orientation": None, "color": "red"},
@@ -23,9 +13,7 @@ GAME_PIECES = [
     {"id": 7, "symbols": ["C", "A", "E"], "length": 3, "placed": False, "position": None, "orientation": None, "color": "cyan"},
     {"id": 8, "symbols": ["B", "C", "D"], "length": 3, "placed": False, "position": None, "orientation": None, "color": "bright_orange"},
     {"id": 9, "symbols": ["A", "C"], "length": 2, "placed": False, "position": None, "orientation": None, "color": "pink"},
-
 ]
-
 
 PIECE_COLORS = {
     "red": "\033[31m",
@@ -40,196 +28,233 @@ PIECE_COLORS = {
     "reset": "\033[0m",
 }
 
-
-# just defines the grid size and an empty data structure for the board
 grid_height = 5
 grid_width = 5
 board = [[None for _ in range(grid_width)] for _ in range(grid_height)]
+moves = 0
+
+# ---------- [END] CONSTANTS [END] ----------
+
+# ---------- [BEGIN] FUNCTIONS [BEGIN] ----------
 
 def render_board():
     for row in board:
         for cell in row:
             if cell is None:
-                print("  ", end="")
+                print(" ", end="")
             else:
                 piece_id, symbol_index = cell
-                piece = next(p for p in GAME_PIECES if p["id"] == piece_id)
+                piece = next(piece for piece in GAME_PIECES if piece["id"] == piece_id)
                 symbol = piece["symbols"][symbol_index]
+                if symbol == "A":
+                    symbol = " ◉ "
+                elif symbol == "B":
+                    symbol = " ⬟ "
+                elif symbol == "C":
+                    symbol = " ▲ "
+                elif symbol == "D":
+                    symbol = " 𖦹 "
+                elif symbol == "E":
+                    symbol = " ✡︎ "
                 color_code = PIECE_COLORS[piece["color"]]
                 print(color_code + symbol + PIECE_COLORS["reset"], end=" ")
         print()
 
-def get_board_symbols(board_data):
-    existing_symbols = []
-    for cell in board_data:
+def get_row_symbols(row, pieces_list):
+    print(row)
+    symbols = []
+    for cell in board[row]:
         if cell is not None:
-            piece_id, symbol_index = cell
-            piece = next(p for p in GAME_PIECES if p["id"] == piece_id)
-            existing_symbols.append(piece["symbols"][symbol_index])
-    return existing_symbols
+            piece_id, symbol = cell
+            piece = next(piece for piece in pieces_list if piece["id"] == piece_id)
+            symbols.append(piece["symbols"][symbol])
+    return symbols
 
+def get_col_symbols(column, pieces_list):
+    symbols = []
+    for r in range(grid_height):
+        cell = board[r][column]
+        if cell is not None:
+            piece_id, symbol = cell
+            piece = next(piece for piece in pieces_list if piece["id"] == piece_id)
+            symbols.append(piece["symbols"][symbol])
+    return symbols
 
-def fetch_valid_placements(piece):
+def fetch_valid_placements(piece, pieces_list):
     valid_placements = []
+    piece_length = piece["length"]
 
     for i in range(grid_height):
         for j in range(grid_width):
+            if j + piece_length <= grid_width:
+                valid = True
+                for k in range(piece_length):
+                    row = i
+                    column = j + k
+                    if board[row][column] is not None:
+                        valid = False
+                        break
+                    symbol = piece["symbols"][k]
+                    if symbol in get_row_symbols(row, pieces_list) or symbol in get_col_symbols(column, pieces_list):
+                        valid = False
+                        break
+                if valid:
+                    valid_placements.append({"row": i, "column": j, "orientation": "horizontal"})
 
-            if piece["length"] + j <= grid_width:
-                forward_ok = True
-                backward_ok = True
+            if j + piece_length <= grid_width:
+                valid = True
+                for k in range(piece_length):
+                    row = i
+                    column = j + k
+                    if board[row][column] is not None:
+                        valid = False
+                        break
+                    symbol = piece["symbols"][piece_length - 1 - k]
+                    if symbol in get_row_symbols(row, pieces_list) or symbol in get_col_symbols(column, pieces_list):
+                        valid = False
+                        break
+                if valid:
+                    valid_placements.append({"row": i, "column": j, "orientation": "reversed_horizontal"})
 
-                row_symbols = get_board_symbols(board[i])
-                col_symbols = get_board_symbols([board[r][j] for r in range(grid_height)])
+            if i + piece_length <= grid_height:
+                valid = True
+                for k in range(piece_length):
+                    row = i + k
+                    column = j
+                    if board[row][column] is not None:
+                        valid = False
+                        break
+                    symbol = piece["symbols"][k]
+                    if symbol in get_row_symbols(row, pieces_list) or symbol in get_col_symbols(column, pieces_list):
+                        valid = False
+                        break
+                if valid:
+                    valid_placements.append({"row": i, "column": j, "orientation": "vertical"})
 
-                for k in range(piece["length"]):
-                    f_symbol = piece["symbols"][k]
-                    b_symbol = piece["symbols"][piece["length"] - 1 - k]
-
-                    cell = board[i][j + k]
-                    if cell is not None or f_symbol in row_symbols or f_symbol in col_symbols:
-                        forward_ok = False
-                    if cell is not None or b_symbol in row_symbols or b_symbol in col_symbols:
-                        backward_ok = False
-                if forward_ok:
-                    valid_placements.append({"row": i, "col": j, "orientation": "horizontal"})
-                if backward_ok:
-                    valid_placements.append({"row": i, "col": j, "orientation": "reversed_horizontal"})
-
-            if piece["length"] + i <= grid_height:
-                forward_ok = True
-                backward_ok = True
-
-                row_symbols = get_board_symbols(board[i])
-                col_symbols = get_board_symbols([board[r][j] for r in range(grid_height)])
-
-                for k in range(piece["length"]):
-                    f_symbol = piece["symbols"][k]
-                    b_symbol = piece["symbols"][piece["length"] - 1 - k]
-
-                    cell = board[i + k][j]
-                    if cell is not None or f_symbol in row_symbols or f_symbol in col_symbols:
-                        forward_ok = False
-                    if cell is not None or b_symbol in row_symbols or b_symbol in col_symbols:
-                        backward_ok = False
-                if forward_ok:
-                    valid_placements.append({"row": i, "col": j, "orientation": "vertical"})
-                if backward_ok:
-                    valid_placements.append({"row": i, "col": j, "orientation": "reversed_vertical"})
+            if i + piece_length <= grid_height:
+                valid = True
+                for k in range(piece_length):
+                    row = i + k
+                    column = j
+                    if board[row][column] is not None:
+                        valid = False
+                        break
+                    symbol = piece["symbols"][piece_length - 1 - k]
+                    if symbol in get_row_symbols(row, pieces_list) or symbol in get_col_symbols(column, pieces_list):
+                        valid = False
+                        break
+                if valid:
+                    valid_placements.append({"row": i, "column": j, "orientation": "reversed_vertical"})
 
     return valid_placements
 
-def place_piece(piece, valid_locations):
-    if not valid_locations:
-        piece["placed"] = "Invalid"
+def place_piece(piece, placement):
+    global moves
+    if not placement:
+        piece["placed"] = False
         return
-
-    placement = random.choice(valid_locations)
     row = placement["row"]
-    col = placement["col"]
-    if placement["orientation"] == "horizontal":
-        for k in range(piece["length"]):
-            board[row][col + k] = (piece["id"], k)
-    elif placement["orientation"] == "reversed_horizontal":
-        for k in range(piece["length"]):
-            board[row][col + k] = (piece["id"], piece["length"] - 1 - k)
-    elif placement["orientation"] == "vertical":
-        for k in range(piece["length"]):
-            board[row + k][col] = (piece["id"], k)
-    elif placement["orientation"] == "reversed_vertical":
-        for k in range(piece["length"]):
-            board[row + k][col] = (piece["id"], piece["length"] - 1 - k)
+    column = placement["column"]
+    piece_length = piece["length"]
+    orientation = placement["orientation"]
+
+    if orientation == "horizontal":
+        for k in range(piece_length):
+            board[row][column + k] = (piece["id"], k)
+    elif orientation == "reversed_horizontal":
+        for k in range(piece_length):
+            board[row][column + k] = (piece["id"], piece_length - 1 - k)
+    elif orientation == "vertical":
+        for k in range(piece_length):
+            board[row + k][column] = (piece["id"], k)
+    elif orientation == "reversed_vertical":
+        for k in range(piece_length):
+            board[row + k][column] = (piece["id"], piece_length - 1 - k)
 
     piece["placed"] = True
-    piece["position"] = (row, col)
-    piece["orientation"] = placement["orientation"]
+    piece["position"] = (row, column)
+    piece["orientation"] = orientation
+    moves += 1
 
-def solve_board(pieces, board):
-    if all(piece["placed"] for piece in pieces):
+def remove_piece(piece):
+    global moves
+    if not piece["placed"]:
+        return
+    row, column = piece["position"]
+    piece_length = piece["length"]
+    orientation = piece["orientation"]
+    if orientation == "horizontal" or orientation == "reversed_horizontal":
+        for k in range(piece_length):
+            board[row][column + k] = None
+    else:
+        for k in range(piece_length):
+            board[row + k][column] = None
+    piece["placed"] = False
+    piece["position"] = None
+    piece["orientation"] = None
+    moves += 1
+
+def solve_board(pieces_list):
+    if all(piece["placed"] for piece in pieces_list):
         return True
 
-    unplaced = [p for p in pieces if not p["placed"]]
-    piece_placements = [(p, fetch_valid_placements(p)) for p in unplaced]
+    unplaced = [piece for piece in pieces_list if not piece["placed"]]
+
+    piece_placements = [(piece, fetch_valid_placements(piece, pieces_list)) for piece in unplaced]
     piece_placements.sort(key=lambda x: len(x[1]))
 
     piece, placements = piece_placements[0]
 
-    for placement in placements:
-        # print(f"Trying piece {piece['id']} at {placement}")
-        place_piece(piece, [placement])
-        if solve_board(pieces, board):
-            return True
+    if not placements:
+        return False
 
+    for placement in placements:
+        place_piece(piece, placement)
+        if solve_board(pieces_list):
+            return True
         remove_piece(piece)
 
     return False
 
-def remove_piece(piece):
-    """Remove a piece from the board."""
-    row, col = piece["position"]
-    length = piece["length"]
-    orientation = piece["orientation"]
+unique_solutions = []
+def store_solution(solution):
+    global moves
+    solution_string = ""
+    for row in board:
+        for cell in row:
+            if cell is None:
+                print(" ", end="")
+            else:
+                piece_id, symbol_index = cell
+                piece = next(piece for piece in GAME_PIECES if piece["id"] == piece_id)
+                symbol = piece["symbols"][symbol_index]
+                solution_string += symbol
+    if solution_string not in unique_solutions:
+        unique_solutions.append(solution_string)
+        render_board()
+        print(f"{len(unique_solutions)} unique solutions have been found...")
+        print(f"Found a valid solution in: {moves} moves")
+        moves = 0
 
-    if orientation == "horizontal":
-        for k in range(length):
-            board[row][col + k] = None
-    elif orientation == "reversed_horizontal":
-        for k in range(length):
-            board[row][col + k] = None
-    elif orientation == "vertical":
-        for k in range(length):
-            board[row + k][col] = None
-    elif orientation == "reversed_vertical":
-        for k in range(length):
-            board[row + k][col] = None
+# ---------- [END] FUNCTIONS [END] ----------
 
-    piece["placed"] = False
-    piece["position"] = None
-    piece["orientation"] = None
 
-# Usage
-pieces = GAME_PIECES.copy()
-random.shuffle(pieces)  # Optional
-
-for piece in GAME_PIECES:
-    piece["placed"] = False
-    piece["position"] = None
-    piece["orientation"] = None
+# ---------- [BEGIN] GAME START [BEGIN] ----------
 
 while True:
-    if solve_board(GAME_PIECES, board):
-        render_board()
-        exit()
+    pieces = deepcopy(GAME_PIECES)
+    random.shuffle(pieces)
+
+    board[:] = [[None for _ in range(grid_width)] for _ in range(grid_height)]
+    for piece in pieces:
+        piece["placed"] = False
+        piece["position"] = None
+        piece["orientation"] = None
+
+
+    if solve_board(pieces):
+        store_solution(board)
     else:
         print("No solution found")
 
-# def handle_game():
-#     global board
-#     success = False
-#
-#     while not success:
-#
-#         board = [[None for _ in range(grid_width)] for _ in range(grid_height)]
-#         pieces = GAME_PIECES.copy()
-#         random.shuffle(pieces)
-#         invalid_placements = 0
-#
-#         for piece in pieces:
-#             piece["placed"] = False
-#             piece["position"] = None
-#             piece["orientation"] = None
-#
-#         for piece in pieces:
-#             while piece["placed"] is False:
-#                 placements = fetch_valid_placements(piece)
-#                 place_piece(piece, placements)
-#                 if piece["placed"] == "Invalid":
-#                     invalid_placements += 1
-#                     break
-#
-#         if invalid_placements == 0:
-#             success = True
-#
-#     render_board()
-
-# handle_game()
+# ---------- [END] GAME START [END] ----------
