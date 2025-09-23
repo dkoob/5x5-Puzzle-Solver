@@ -61,7 +61,6 @@ def render_board():
         print()
 
 def get_row_symbols(row, pieces_list):
-    print(row)
     symbols = []
     for cell in board[row]:
         if cell is not None:
