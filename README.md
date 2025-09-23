@@ -57,3 +57,6 @@ initiate a new blank board, reset all of the pieces to their default values, and
 
 Thats basically it. Fairly simple and straight forward. I have not been able to come up with a confident estimate of the amount of unique arrangements of pieces you can have for this puzzle, but my guess is somewhere over the 1 quintillion mark. So a brute force strategy would probably not be as possible as I initially imagined. You basically have to have some degree
 of backtracking and position checking optimization to have any realistic chance of solving this puzzle as a machine, as computers are missing the logical skills that humans have in identifying failed solutions early.
+
+### Running this script without proper software
+If you would like to run this script yourself without downloading anything or setting up any coding environments, you can copy all of the code from the [main.py file](main.py) and paste it into this website, [Programiz Online IDE](https://www.programiz.com/python-programming/online-compiler/) and click run!

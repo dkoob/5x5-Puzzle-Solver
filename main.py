@@ -216,7 +216,7 @@ def solve_board(pieces_list):
     return False
 
 unique_solutions = []
-def store_solution(solution):
+def store_solution(solution, num_of_solutions):
     global moves
     solution_string = ""
     for row in board:
@@ -229,31 +229,46 @@ def store_solution(solution):
                 symbol = piece["symbols"][symbol_index]
                 solution_string += symbol
     if solution_string not in unique_solutions:
-        unique_solutions.append(solution_string)
-        render_board()
-        print(f"{len(unique_solutions)} unique solutions have been found...")
-        print(f"Found a valid solution in: {moves} moves")
-        moves = 0
+        if len(unique_solutions) < int(num_of_solutions):
+            unique_solutions.append(solution_string)
+            render_board()
+            print(f"{len(unique_solutions)} unique solutions have been found...")
+            print(f"Found a valid solution in: {moves} moves")
+            moves = 0
+        else:
+            print("The requested number of unique solutions have been found...")
+            return "done"
+
+def handle_user_input():
+    user_input = input("The amount of unique solutions you would like to generate (or type exit to stop solving): ")
+    return user_input
 
 # ---------- [END] FUNCTIONS [END] ----------
 
 
 # ---------- [BEGIN] GAME START [BEGIN] ----------
-
 while True:
-    pieces = deepcopy(GAME_PIECES)
-    random.shuffle(pieces)
+    user_input = handle_user_input()
+    if user_input == "exit":
+        break
+    while True:
 
-    board[:] = [[None for _ in range(grid_width)] for _ in range(grid_height)]
-    for piece in pieces:
-        piece["placed"] = False
-        piece["position"] = None
-        piece["orientation"] = None
+        pieces = deepcopy(GAME_PIECES)
+        random.shuffle(pieces)
+
+        board[:] = [[None for _ in range(grid_width)] for _ in range(grid_height)]
+        for piece in pieces:
+            piece["placed"] = False
+            piece["position"] = None
+            piece["orientation"] = None
 
 
-    if solve_board(pieces):
-        store_solution(board)
-    else:
-        print("No solution found")
+        if solve_board(pieces):
+            status = store_solution(board, user_input)
+            if status == "done":
+                unique_solutions = []
+                break
+        else:
+            print("No solution found")
 
 # ---------- [END] GAME START [END] ----------
