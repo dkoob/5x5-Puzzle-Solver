@@ -235,6 +235,9 @@ def store_solution(solution, num_of_solutions):
             print(f"{len(unique_solutions)} unique solutions have been found...")
             print(f"Found a valid solution in: {moves} moves")
             moves = 0
+            if len(unique_solutions) == int(num_of_solutions) - 1:
+                print("The requested number of unique solutions have been found...")
+                return "done"
         else:
             print("The requested number of unique solutions have been found...")
             return "done"
