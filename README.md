@@ -26,7 +26,8 @@ creates the initial game board that looks something like this to the computer:
 > None None None None None  
 > None None None None None  
 > None None None None None  
-> None None None None None  
+> None None None None None
+You may notice the square brackets around the code in that line, --> [ [None for _ in range(grid_width)] for _ in range(grid_height) ] <-- these two brackets save the board in a data structure called a list, which is a mutable (changeable) way to store data in python
 
 This allows me  to have a base object for the game board with initial values that I can check before trying to place a piece. If any of the cells that the piece would be placed on **ARE NOT** "None", then the placement would not be valid for that piece.
 
