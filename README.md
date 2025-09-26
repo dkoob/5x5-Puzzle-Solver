@@ -57,7 +57,7 @@ The next big section is where all of the functions live. I'll go in order of eac
 
 ### [ ---------- Game Start ---------- ]  
 At the bottom of the script are a couple of lines of code that are actually responsible for initiating and running the solver. This line has a "while True" loop, which was a fairly lazy choice on my part, but it essentially will just run the script forever until it is stopped. Inside of this loop, we create a copy of all of the game pieces, shuffle them to begin with a random one,
-initiate a new blank board, reset all of the pieces to their default values, and then run the solve_board command and see how far we get.
+initiate a new blank board, reset all of the pieces to their default values, and then run the solve_board command and see how far we get. <-- I have since changed this so now it can handle user input to display however many unique solutions you want
 
 That's basically it. Fairly simple and straightforward. I have not been able to come up with a confident estimate of the number of unique arrangements of pieces you can have for this puzzle, but my guess is somewhere over the 1 quadrillion mark. So a brute force strategy would probably not be as possible as I initially imagined. You basically have to have some degree
 of backtracking and position checking optimization to have any realistic chance of solving this puzzle as a machine, as computers are missing the logical skills that humans have in identifying failed solutions early.
