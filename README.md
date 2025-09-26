@@ -26,6 +26,7 @@ creates the initial game board that looks something like this to the computer:
 > None None None None None  
 > None None None None None  
 > None None None None None  
+> None None None None None  
 
 This allows me  to have a base object for the game board with initial values that I can check before trying to place a piece. If any of the cells that the piece would be placed on **ARE NOT** "None", then the placement would not be valid for that piece.
 
